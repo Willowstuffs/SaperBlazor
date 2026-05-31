@@ -1,0 +1,40 @@
+﻿@using Saper.Shared.Models
+@using Microsoft.AspNetCore.Components.Web
+
+@code {
+    //reminder: nie mozna miec takiej samej nazwy Cell.razor i Cell.cs poniewaz powoduje blad cs1061. Zmieniono na CellView.razor
+    [Parameter] public Saper.Shared.Models.Cell CellData { get; set; } = default!;
+    [Parameter] public EventCallback<Cell> OnLeftClick { get; set; }
+    [Parameter] public EventCallback<Cell> OnRightClick { get; set; }
+
+    private string GetImageSrc()
+    {
+        return CellData.State switch
+        {
+            CellState.Revealed => CellData.HasMine 
+                ? "img/bomb.png"
+                : CellData.AdjacentMines > 0
+                    ? $"img/{CellData.AdjacentMines}.png" // 1-8.png
+                    : "img/empty.png", //Pusta komorka - szary pusty kwadrat
+
+            CellState.Flagged => "img/flag.png", // Flaga na komorce
+            CellState.Exploded => "img/exploded.png", // Komorka z eksplodowana bomba
+            _ => "img/hidden.png" // Ukryta komorka - szary kwadrat gdy nie jest odkryta
+        };
+    }
+
+    private async Task HandleClick(MouseEventArgs e)
+    {
+        if (e.Button == 0)
+            await OnLeftClick.InvokeAsync(CellData);
+        else if (e.Button == 2)
+            await OnRightClick.InvokeAsync(CellData);
+    }
+}
+
+<img src="@GetImageSrc()"
+     @onclick="HandleClick"
+     @oncontextmenu="HandleClick"
+     @oncontextmenu:preventDefault="true"
+     width="32" height="32"
+     style="image-rendering: pixelated; cursor: pointer;" />

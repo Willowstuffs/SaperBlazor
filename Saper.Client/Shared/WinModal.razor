@@ -1,0 +1,79 @@
+﻿@inject HttpClient Http
+@using Saper.Shared.Models
+
+@if (Show)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <h2>Congratulations!</h2>
+            <p>You have won, and it took you <strong>@Time</strong> seconds!</p>
+
+            <label>Please submit your username:</label>
+            <input @bind="playerName" placeholder="Anonymous" maxlength="10" />
+
+            <div class="modal-buttons">
+                <button @onclick="Submit" disabled="@isSubmitting">Save your score</button>
+                <button @onclick="Close">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool Show { get; set; } //Widocznosc modala
+
+    [Parameter]
+    public EventCallback<bool> ShowChanged { get; set; } //Callback o zmianie widoczności modala
+
+    [Parameter]
+    public int Time { get; set; }
+
+    [Parameter]
+    public string Difficulty { get; set; } = "Easy"; //Domyslny poziom trudnosci
+
+    private string playerName = "Anonymous"; //Domyslna nazwa gracza
+    private bool isSubmitting = false; // Flaga blokujaca przycisk podczas wysylania danych
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(playerName))
+            return; // nie wysylaj pustej nazwy gracza
+
+        isSubmitting = true;
+
+        var entry = new LeaderboardEntry 
+        {
+            PlayerName = playerName,
+            Time = Time,
+            Difficulty = Difficulty,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/Leaderboard", entry); // Wyslanie danych do API
+
+            if (response.IsSuccessStatusCode)
+            {
+                await ShowChanged.InvokeAsync(false);
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Server error: {response.StatusCode} - {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception during POST: {ex.Message}"); //Blad podczas wpisu
+        }
+
+        isSubmitting = false;
+    }
+
+    private async Task Close()
+    {
+        await ShowChanged.InvokeAsync(false); // Zamykanie modala
+    }
+}

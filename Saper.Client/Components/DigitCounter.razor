@@ -1,0 +1,29 @@
+﻿<div style="display: flex;">
+    @foreach (var digit in GetDigits())
+    {
+        <img src="@($"img/{digit}.png")"
+             width="22" height="42"
+             style="image-rendering: pixelated;" />
+    }
+</div>
+
+@code {
+    [Parameter] public int Value { get; set; } = 0;
+    [Parameter] public int Length { get; set; } = 3; // 3 cyfrowy licznik
+
+    private IEnumerable<string> GetDigits()
+    {
+        var value = Math.Clamp(Value, -999, 999); // zabezpieczenie, licznik sie zamyka na 999
+        var text = value.ToString($"D{Length}"); // D3 = 3 cyfry, wypełnione zerami
+
+        foreach (char c in text)
+        {
+            yield return c switch
+            {
+                '-' => "ct",                 // ct.png = minus
+                >= '0' and <= '9' => $"ct{c}", // ct0.png ... ct9.png
+                _ => "ct0"
+            };
+        }
+    }
+}

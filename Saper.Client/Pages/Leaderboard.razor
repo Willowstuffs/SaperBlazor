@@ -1,0 +1,46 @@
+﻿@page "/leaderboard"  
+@inject Saper.Client.Services.LeaderboardService LeaderboardService
+
+<h3>Leaderboard</h3>  
+
+@if (entries == null)  
+{  
+    <p>Loading entries...</p>  
+}  
+else if (entries.Count == 0)  
+{  
+    <p>No entries.</p>  
+}  
+else  
+{  
+    <table class="table">  
+        <thead>  
+            <tr>  
+                <th>Player</th>  
+                <th>Time (s)</th>  
+                <th>Difficulty</th>  
+                <th>Date</th>  
+            </tr>  
+        </thead>  
+        <tbody>  
+            @foreach (var entry in entries)  
+            {  
+                <tr>  
+                    <td>@entry.PlayerName</td>  
+                    <td>@entry.Time</td>  
+                    <td>@entry.Difficulty</td>  
+                    <td>@entry.CreatedAt.ToShortDateString()</td>  
+                </tr>  
+            }  
+        </tbody>  
+    </table>  
+}  
+
+@code {  
+    private List<Saper.Shared.Models.LeaderboardEntry>? entries;  
+
+    protected override async Task OnInitializedAsync()  
+    {  
+        entries = await LeaderboardService.GetEntriesAsync();  
+    }  
+}

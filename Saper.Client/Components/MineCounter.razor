@@ -1,0 +1,29 @@
+﻿<div style="display: flex;">
+    @foreach (var digit in GetDigits())
+    {
+        <img src="@($"img/{digit}.png")"
+             width="22" height="42"
+             style="image-rendering: pixelated;" />
+    }
+</div>
+
+@code {
+    //Kod do obslugi licznika min
+    [Parameter] public int Count { get; set; } = 0;
+
+    private IEnumerable<string> GetDigits()
+    {
+        var value = Math.Clamp(Count, -99, 999); 
+        var text = value.ToString("D3"); // Formatujemy liczbę jako trzycyfrową z wiodącymi zerami
+
+        foreach (char c in text)
+        {
+            yield return c switch
+            {
+                '-' => "ct", // Minus bedzie oznaczany jako "ct"
+                >= '0' and <= '9' => $"ct{c}", // Cyfry od 0 do 9 beda prefiksowane "ct"
+                _ => "ct0" // Inne znaki, takie jak spacje, będą traktowane jako 0
+            };
+        }
+    }
+}

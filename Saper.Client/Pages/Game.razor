@@ -1,0 +1,138 @@
+﻿@page "/game"  
+@using Saper.Shared.Models  
+@using Saper.Client.Components  
+@using Microsoft.AspNetCore.Components.Web  
+@inject HttpClient Http  
+
+<h3>Minesweeper</h3>  
+@if (!IsStarted)
+{
+    <Saper.Client.Shared.DifficultySelector OnStartGame = "HandleStartGame" />
+} else {
+
+    <div class="game-container">  
+        <div class="game-header">  @* Header zawierajacy licznik min, czasu, oraz klasyczny Smiley *@
+            <DigitCounter Value="@FlagsRemaining" />
+            <img src="@SmileyImage"  
+                 @onclick="RestartGame"  
+                 width="52" height="52"  
+                 style="image-rendering: pixelated; cursor: pointer;" />
+            <DigitCounter Value="@ElapsedTime" />
+        </div>  
+
+        <div class="board">
+            @for (int x = 0; x < BoardWidth; x++) @* Generowanie tablicy *@
+            {
+                <div class="height">
+                    @for (int y = 0; y < BoardHeight; y++)
+                    {
+                        <CellView CellData="Board.Cells[x, y]"
+                                  OnLeftClick="OnLeftClick"
+                                  OnRightClick="OnRightClick" />
+                    }
+                </div>
+            }
+        </div>
+
+        <Saper.Client.Shared.WinModal Show="@ShowWinModal"  
+                  ShowChanged="@((bool v) => ShowWinModal = v)"  
+                  Time="@ElapsedTime"  
+                  Difficulty="@Difficulty" />  
+
+        <Saper.Client.Shared.LoseModal Show="@ShowLoseModal"  
+                   ShowChanged="@((bool v) => ShowLoseModal = v)" />  
+    </div>
+   }
+
+@code {  
+    private bool IsStarted = false;
+    private GameBoard Board = new GameBoard(9, 9, 10); // Default na easy tylko dla inicjalizacji, by uniknac warning nullable
+    private int BoardWidth = 9;
+    private int BoardHeight = 9;
+    private int MineCount = 10;
+    private int FlagsRemaining = 10;
+    private string Difficulty = "Easy";
+
+    private void HandleStartGame((string level, int width, int height, int mines) config)
+    {
+        //Wartosci pobierane z DifficultySelector
+        Difficulty = config.level; 
+        BoardWidth = config.width;
+        BoardHeight = config.height;
+        MineCount = config.mines;
+        FlagsRemaining = config.mines;
+        IsStarted = true;
+        StartNewGame();
+    }
+
+    private bool ShowWinModal = false;  
+    private bool ShowLoseModal = false;  
+
+    private string SmileyImage => Board.IsWin ? "img/win.png"  
+                               : Board.IsGameOver ? "img/dead.png"  
+                               : "img/default.png";  
+    //Modal zalezny od stanu gry, zmiana obrazka
+    private System.Timers.Timer? gameTimer;  
+    private int ElapsedTime = 0;  
+
+    private void StartNewGame()  
+    {   
+        Board = new GameBoard(BoardWidth, BoardHeight, MineCount);
+        BoardWidth = Board.Width;
+        BoardHeight = Board.Height;
+        MineCount = Board.Mines;
+        FlagsRemaining = MineCount;  
+        ShowWinModal = false;  
+        ShowLoseModal = false;  
+        ElapsedTime = 0;  
+
+        gameTimer?.Dispose();  // Resetowanie timera
+        gameTimer = new System.Timers.Timer(1000);  //Interwal: 1 sekunda
+        gameTimer.Elapsed += (_, _) => // Zdarzenie wywolywane co sekunde
+        {  
+            ElapsedTime++;  
+            InvokeAsync(StateHasChanged);  // Odswiezanie stanu wraz z timerem
+        };  
+        gameTimer.Start();  
+    }  
+
+    private void RestartGame() => StartNewGame();
+
+    private void OnLeftClick(Cell cell)  
+    {  
+        if (Board.IsWin || Board.IsGameOver) return;  
+
+        Board.Reveal(cell.X, cell.Y);  
+
+        if (Board.IsGameOver)  
+        {  
+            ShowLoseModal = true;  
+            gameTimer?.Stop();  
+        }  
+        else if (Board.IsWin)  
+        {  
+            ShowWinModal = true;  
+            gameTimer?.Stop();  
+        }  
+
+        StateHasChanged();  
+    }  
+
+    private void OnRightClick(Cell cell)  
+    {  
+        if (Board.IsWin || Board.IsGameOver || cell.State == CellState.Revealed) return;  
+
+        if (cell.State == CellState.Flagged)  
+        {  
+            cell.State = CellState.Hidden;  
+            FlagsRemaining++;  
+        }  
+        else if (FlagsRemaining > 0)  
+        {  
+            cell.State = CellState.Flagged;  
+            FlagsRemaining--;  
+        }  
+
+        StateHasChanged();  
+    }  
+}

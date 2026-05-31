@@ -1,0 +1,18 @@
+﻿<img src="@GetImageSrc()"
+     @onclick="OnClick"
+     width="26" height="26"
+     style="image-rendering: pixelated; cursor: pointer;" />
+
+@code {
+    //Usmieszek pokazujacy stan gry, oraz bedacy przyciskiem do resetowania gry
+    [Parameter] public string State { get; set; } = "default"; // default, dead, win
+    [Parameter] public EventCallback OnClickCallback { get; set; }
+
+    private string GetImageSrc() => $"img/{State}.png";
+
+    private async Task OnClick() // Metoda wywolywana po kliknieciu w usmieszka
+    {
+        if (OnClickCallback.HasDelegate)
+            await OnClickCallback.InvokeAsync();
+    }
+}

@@ -1,0 +1,26 @@
+﻿@inherits ComponentBase
+
+@if (Show)
+{
+    <div class="modal-overlay" @onclick="Close">
+        <div class="modal-content" @onclick:stopPropagation>
+            <h2>You lost!</h2>
+            <p>Better luck next time!</p>
+            <button @onclick="Close">Close</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool Show { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ShowChanged { get; set; }
+
+    private async Task Close()
+    {
+        Show = false;
+        await ShowChanged.InvokeAsync(false);
+    }
+}

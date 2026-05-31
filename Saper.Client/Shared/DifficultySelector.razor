@@ -1,0 +1,51 @@
+﻿@code {
+    [Parameter] public EventCallback<(string level, int width, int height, int mines)> OnStartGame { get; set; }
+    //DifficultySelector wysyla informacje o poziomie trudnosci, szerokosci, wysokosci i liczbie min do Game.razor. Bazowo Easy
+    private string selected = "Easy";
+    private int customWidth = 9;
+    private int customHeight = 9;
+    private int customMines = 10;
+
+    private async Task StartGame()
+    {
+        (int w, int h, int m) = selected switch //width, height, mines
+        {
+            "Easy" => (9, 9, 10),
+            "Medium" => (16, 16, 40),
+            "Hard" => (16, 30, 99),
+            "Custom" => (customWidth, customHeight, customMines),
+            _ => (9, 9, 10)
+        };
+
+        await OnStartGame.InvokeAsync((selected, w, h, m));
+    }
+}
+
+<div class="modal-overlay">
+    <div class="modal-content">
+        <h2>Select Difficulty</h2>
+
+        <select @bind="selected" style="width: 100%; margin-bottom: 1rem;">
+            <option value="Easy">Easy (9x9, 10 mines)</option>
+            <option value="Medium">Medium (16x16, 40 mines)</option>
+            <option value="Hard">Hard (16x30, 99 mines)</option>
+            <option value="Custom">Custom</option>
+        </select>
+
+        @if (selected == "Custom")
+        {
+            <div>
+                <label>Width:</label>
+                <input type="number" @bind="customWidth" min="5" max="30" /> @* Powyzej 30 artefakty graficzne *@
+                <label>Height:</label>
+                <input type="number" @bind="customHeight" min="5" max="30" /> @* 900 chyba starczy cnie? *@
+                <label>Mines:</label>
+                <input type="number" @bind="customMines" min="1" max="@((customWidth * customHeight) - 1)" /> @* Maksymalnie tyle min ile pol -1, minimalnie 1 *@
+            </div>
+        }
+
+        <div class="modal-buttons" style="margin-top: 1rem;">
+            <button @onclick="StartGame" class="btn btn-primary">Start</button>
+        </div>
+    </div>
+</div>

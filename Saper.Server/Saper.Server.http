@@ -1,0 +1,6 @@
+@Saper.Server_HostAddress = http://localhost:5224
+
+GET {{Saper.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
